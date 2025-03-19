@@ -2,8 +2,8 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
 # 1. Cargar los datasets
-soccer_df = pd.read_csv("Data/SoccerLeagues.csv")
-country_facts_df = pd.read_csv("Data/Country_facts.csv")
+soccer_df = pd.read_csv("./Data/SoccerLeagues.csv")
+country_facts_df = pd.read_csv("./Data/Country_facts.csv")
 
 # 2. Eliminar columnas irrelevantes en soccer_df
 if 'Unnamed: 15' in soccer_df.columns:

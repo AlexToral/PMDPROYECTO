@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Cargar el dataset procesado
-data_path = "Data/Processed_Sports_Data.csv"
+data_path = "./Data/Processed_Sports_Data.csv"
 merged_df = pd.read_csv(data_path)
 
 # Título de la aplicación

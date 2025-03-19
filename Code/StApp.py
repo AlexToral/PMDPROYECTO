@@ -4,54 +4,67 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Cargar el dataset procesado
-data_path = "./Data/Processed_Sports_Data.csv"
-merged_df = pd.read_csv(data_path)
+data_path = "Data/Processed_HomeAdvantage_Data.csv"
+df = pd.read_csv(data_path)
 
 # Título de la aplicación
-st.title("Análisis de la Ventaja de Jugar en Casa en Deportes")
+st.title("Impacto de la Ventaja de Jugar en Casa en el Desempeño de Equipos de Fútbol")
 
-# Sección 1: Vista previa del dataset
-st.subheader("Vista previa del dataset procesado")
-st.dataframe(merged_df.head())
+# Sección 1: Vista previa de los datos
+st.subheader("Vista previa de los datos")
+st.dataframe(df.head())
 
-# Sección 2: Distribución de HomeRatio antes y después de discretización
-st.subheader("Distribución de HomeRatio")
-fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+# Sección 2: Tendencia del Home Advantage a lo largo del tiempo
+st.subheader("Tendencia del Home Advantage a lo largo del tiempo")
+trend_df = df.groupby('Year', as_index=False)['HomeRatio'].mean()
+fig1, ax1 = plt.subplots()
+sns.lineplot(data=trend_df, x='Year', y='HomeRatio', marker='o', ax=ax1)
+ax1.set_title('Promedio de HomeRatio por Año')
+ax1.set_xlabel('Año')
+ax1.set_ylabel('HomeRatio Promedio')
+st.pyplot(fig1)
 
-# Antes de la discretización
-ax[0].hist(merged_df['HomeRatio'], bins=20, color='blue', alpha=0.7)
-ax[0].set_title('Distribución de HomeRatio antes de Discretización')
-ax[0].set_xlabel('HomeRatio')
-ax[0].set_ylabel('Frecuencia')
+# Sección 3: Comparación de Home Advantage por país
+st.subheader("Comparación de Home Advantage por País")
+country_avg = df.groupby('Country', as_index=False)['HomeRatio'].mean().sort_values(by='HomeRatio', ascending=False)
+fig2, ax2 = plt.subplots(figsize=(10,6))
+sns.barplot(data=country_avg, x='HomeRatio', y='Country', palette='viridis', ax=ax2)
+ax2.set_title('Promedio de HomeRatio por País')
+ax2.set_xlabel('HomeRatio Promedio')
+ax2.set_ylabel('País')
+st.pyplot(fig2)
 
-# Después de la discretización
-sns.countplot(data=merged_df, x='HomeRatio_Category', palette='viridis', ax=ax[1])
-ax[1].set_title('Categorías de HomeRatio después de Discretización')
-ax[1].set_xlabel('Categoría')
-ax[1].set_ylabel('Frecuencia')
+# Sección 4: Relación entre factores económicos y Home Advantage
 
-st.pyplot(fig)
+st.subheader("Relación entre Factores Económicos y Home Advantage")
 
-# Sección 3: Relación entre GDP y HomeRatio
-st.subheader("Relación entre GDP y HomeRatio")
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.scatterplot(data=merged_df, x='GDP', y='HomeRatio', hue='HomeRatio_Category', alpha=0.7)
-ax.set_title('Relación entre GDP y HomeRatio')
-ax.set_xlabel('GDP (Normalizado)')
-ax.set_ylabel('HomeRatio')
-st.pyplot(fig)
+# Relación entre GDP y HomeRatio
+fig3, ax3 = plt.subplots(figsize=(10,6))
+sns.scatterplot(data=df, x='GDP', y='HomeRatio', hue='Country', alpha=0.7, ax=ax3)
+ax3.set_title('Relación entre GDP (Normalizado) y HomeRatio')
+ax3.set_xlabel('GDP (Normalizado)')
+ax3.set_ylabel('HomeRatio')
+st.pyplot(fig3)
 
-# Sección 4: Relación entre Asistencia y HomeRatio
-st.subheader("Relación entre Asistencia y HomeRatio")
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.scatterplot(data=merged_df, x='Attendance', y='HomeRatio', hue='HomeRatio_Category', alpha=0.7)
-ax.set_title('Relación entre Asistencia y HomeRatio')
-ax.set_xlabel('Asistencia (Normalizada)')
-ax.set_ylabel('HomeRatio')
-st.pyplot(fig)
+# Relación entre Attendance y HomeRatio
+fig4, ax4 = plt.subplots(figsize=(10,6))
+sns.scatterplot(data=df, x='Attendance', y='HomeRatio', hue='Country', alpha=0.7, ax=ax4)
+ax4.set_title('Relación entre Attendance (Normalizado) y HomeRatio')
+ax4.set_xlabel('Attendance (Normalizado)')
+ax4.set_ylabel('HomeRatio')
+st.pyplot(fig4)
 
-# Sección 5: Análisis por país
-st.subheader("Análisis de HomeRatio por País")
-selected_country = st.selectbox("Selecciona un país", merged_df['Country'].unique())
-country_data = merged_df[merged_df['Country'] == selected_country]
-st.write(country_data[['League', 'Team', 'Year', 'HomeRatio', 'AwayGoalsDiff']].sort_values(by='Year', ascending=False))
+# Relación entre PopDensity y HomeRatio
+fig5, ax5 = plt.subplots(figsize=(10,6))
+sns.scatterplot(data=df, x='PopDensity', y='HomeRatio', hue='Country', alpha=0.7, ax=ax5)
+ax5.set_title('Relación entre PopDensity (Normalizado) y HomeRatio')
+ax5.set_xlabel('PopDensity (Normalizado)')
+ax5.set_ylabel('HomeRatio')
+st.pyplot(fig5)
+
+# Sección 5: Análisis Detallado por País y Liga
+st.subheader("Análisis Detallado por País y Liga")
+selected_country = st.selectbox("Selecciona un país", df['Country'].unique())
+selected_league = st.selectbox("Selecciona una liga", df[df['Country'] == selected_country]['League'].unique())
+filtered_df = df[(df['Country'] == selected_country) & (df['League'] == selected_league)]
+st.write(filtered_df.sort_values(by='Year', ascending=False)[['Year', 'Team', 'HomeRatio', 'AwayGoalsDiff']])

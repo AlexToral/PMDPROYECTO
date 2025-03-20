@@ -26,35 +26,43 @@ soccer_df['Country'] = soccer_df['Country'].replace(country_name_corrections)
 soccer_df.loc[soccer_df['HomeRatio'] < 0, 'HomeRatio'] = 0
 soccer_df.loc[soccer_df['AwayGoalsDiff'] < 0, 'AwayGoalsDiff'] = 0
 
-# 5. Seleccionar solo las columnas esenciales para el análisis de Home Advantage
+# 5. Seleccionar solo las columnas esenciales para el análisis
 soccer_df = soccer_df[['Country', 'League', 'Team', 'Year', 'HomeRatio', 'AwayGoalsDiff']]
 
-# 6. En country_facts_df, conservar solo las columnas relevantes
-relevant_country_columns = ['Country', 'PopDensity', 'GDP', 'Attendance']
+# 6. Seleccionar columnas relevantes del dataset de países
+# Usaremos FIFA_Rank si está disponible, de lo contrario se usan factores económicos (como respaldo)
+if 'FIFA_Rank' in country_facts_df.columns:
+    relevant_country_columns = ['Country', 'FIFA_Rank']
+else:
+    relevant_country_columns = ['Country', 'PopDensity', 'GDP', 'Attendance']
+
 country_facts_df = country_facts_df[relevant_country_columns]
 
-# 7. Convertir columnas numéricas y rellenar valores faltantes con la mediana
-numeric_cols_country = ['PopDensity', 'GDP', 'Attendance']
-for col in numeric_cols_country:
-    country_facts_df[col] = pd.to_numeric(country_facts_df[col], errors='coerce')
-    country_facts_df[col] = country_facts_df[col].fillna(country_facts_df[col].median())
+# 7. Procesar la variable FIFA_Rank (si existe)
+if 'FIFA_Rank' in country_facts_df.columns:
+    country_facts_df['FIFA_Rank'] = pd.to_numeric(country_facts_df['FIFA_Rank'], errors='coerce')
+    country_facts_df['FIFA_Rank'] = country_facts_df['FIFA_Rank'].fillna(country_facts_df['FIFA_Rank'].median())
+    # Normalizar la variable (esto la convierte en un valor entre 0 y 1)
+    scaler = MinMaxScaler()
+    country_facts_df[['FIFA_Rank']] = scaler.fit_transform(country_facts_df[['FIFA_Rank']])
+else:
+    # En caso de no tener FIFA_Rank, se procesan las variables económicas (como en versiones anteriores)
+    numeric_cols = ['PopDensity', 'GDP', 'Attendance']
+    for col in numeric_cols:
+        country_facts_df[col] = pd.to_numeric(country_facts_df[col], errors='coerce')
+        country_facts_df[col] = country_facts_df[col].fillna(country_facts_df[col].median())
+    scaler = MinMaxScaler()
+    country_facts_df[numeric_cols] = scaler.fit_transform(country_facts_df[numeric_cols])
 
-# 8. Normalizar las variables numéricas del dataset de países
-scaler = MinMaxScaler()
-country_facts_df[numeric_cols_country] = scaler.fit_transform(country_facts_df[numeric_cols_country])
-
-# 9. Integrar ambos datasets a través de la columna 'Country'
+# 8. Integrar ambos datasets a través de la columna 'Country'
 merged_df = soccer_df.merge(country_facts_df, on='Country', how='left')
 
-# 10. Rellenar valores faltantes en columnas categóricas y numéricas
-cat_cols_merged = merged_df.select_dtypes(include=['object']).columns
-for col in cat_cols_merged:
+# 9. Rellenar valores faltantes en columnas categóricas y numéricas
+for col in merged_df.select_dtypes(include=['object']).columns:
     merged_df[col] = merged_df[col].fillna('Desconocido')
-
-num_cols_merged = merged_df.select_dtypes(include=['int64', 'float64']).columns
-for col in num_cols_merged:
+for col in merged_df.select_dtypes(include=['int64', 'float64']).columns:
     merged_df[col] = merged_df[col].fillna(merged_df[col].median())
 
-# 11. Guardar el dataset procesado con la información necesaria para el análisis
-merged_df.to_csv("Data/Processed_HomeAdvantage_Data.csv", index=False)
-print("¡Limpieza de datos para el análisis del Home Advantage completada con éxito!")
+# 10. Guardar el dataset procesado
+merged_df.to_csv("Data/Processed_HomeAdvantage_FIFA_Data.csv", index=False)
+print("¡Limpieza de datos para el análisis del Home Advantage con FIFA Rank completada con éxito!")

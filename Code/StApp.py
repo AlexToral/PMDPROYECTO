@@ -6,12 +6,21 @@ import plotly.express as px
 
 # Cargar el dataset procesado que ahora incluye FIFA_Rank
 data_path = "Data/Processed_HomeAdvantage_FIFA_Data.csv"
+soccer_path = "Data/SoccerLEagues.csv"
+country_path = "Data/Country_Facts.csv"
+
 df = pd.read_csv(data_path)
+df1 = pd.read_csv(soccer_path)
+df2 = pd.read_csv(country_path)
 
 st.title("Impacto de la Ventaja de Jugar en Casa y su Relación con FIFA Rank")
 
+st.title("Datos antes de la limpieza")
+st.dataframe(df1)
+st.dataframe(df2)
+
 # Sección 1: Vista previa de los datos
-st.subheader("Vista previa de los datos")
+st.subheader("Vista previa de los datos (ya clean)")
 st.dataframe(df.head())
 
 # Sección 2: Tendencia del Home Advantage a lo largo del tiempo

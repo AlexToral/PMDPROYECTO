@@ -1,66 +1,78 @@
 import pandas as pd
+import numpy as np
+from sklearn import tree
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
+from subprocess import check_call
 
-# 1. Cargar el dataset limpio
+# 1. Cargar datos
 df = pd.read_csv("Data/Processed_HomeAdvantage_FIFA_Data.csv")
 
-# 2. Crear la variable objetivo sin hacer trampa
+# 2. Variable objetivo
 df['HomeAdvantage'] = (df['HomeRatio'] >= 0.5).astype(int)
-df = df.drop(columns=['HomeRatio'])  # 🔥 ¡IMPORTANTE! Eliminamos la variable que da la respuesta
+df.drop(columns=['HomeRatio'], inplace=True)
 
-# 3. Codificar variables categóricas
-for col in ['League', 'Country']:
-    le = LabelEncoder()
-    df[col] = le.fit_transform(df[col])
+# 3. Codificación de variables categóricas
+le_country = LabelEncoder()
+le_league = LabelEncoder()
+df['Country'] = le_country.fit_transform(df['Country'])
+df['League'] = le_league.fit_transform(df['League'])
 
-# 4. Selección de features potentes
-features = [
-    'FIFA_Rank',
-    'AwayGoalsDiff',
-    'WinRate_Local',
-    'DrawRate_Local',
-    'LossRate_Local',
-    'WinRate_Visitante',
-    'LossRate_Visitante',
-    'GoalDiff_Visitante_Prom',
-    'Year',
-    'League',
-    'Country'
-]
-
-X = df[features]
+# 4. Features y target
+X = df.drop(columns=['Team', 'HomeAdvantage'])
 y = df['HomeAdvantage']
 
-# 5. División entrenamiento/prueba
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# 6. Entrenar el árbol
-clf = DecisionTreeClassifier(
-    random_state=42,
-    class_weight='balanced',
-    max_depth=6,
-    min_samples_split=20,
-    min_samples_leaf=10
+# 5. Árbol más compacto
+clf = tree.DecisionTreeClassifier(
+    criterion='entropy',
+    max_depth=6,                # 🌿 Reducir profundidad
+    min_samples_split=30,      # 🌿 Reglas más generales
+    min_samples_leaf=10,
+    class_weight={0: 1, 1: 3.6},
+    random_state=42
 )
-clf.fit(X_train, y_train)
+clf.fit(X, y)
 
-# 7. Evaluación
-y_pred = clf.predict(X_test)
+# 6. Precisión del modelo
+accuracy = round(clf.score(X, y) * 100, 2)
+print(f"La precisión del Árbol compacto es: {accuracy}%")
 
-print("Accuracy:", accuracy_score(y_test, y_pred))
-print("\nMatriz de Confusión:")
-print(confusion_matrix(y_test, y_pred))
-print("\nReporte de Clasificación:")
-print(classification_report(y_test, y_pred))
+# 7. Exportar árbol
+os.makedirs('./Guardados', exist_ok=True)
+with open("./Guardados/Arbol_Compacto.dot", 'w') as f:
+    tree.export_graphviz(
+        clf,
+        out_file=f,
+        max_depth=6,
+        feature_names=X.columns,
+        class_names=['No Advantage', 'Advantage'],
+        rounded=True,
+        filled=True
+    )
 
-# 8. Visualización
-sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, fmt='d', cmap='YlGnBu')
-plt.title("Matriz de Confusión - Árbol con Features Futboleras")
+check_call(['dot', '-Tpng', './Guardados/Arbol_Compacto.dot', '-o', './Guardados/Arbol_Compacto.png'])
+print("✅ Árbol compacto exportado a ./Guardados/Arbol_Compacto.png")
+
+# 8. Predicción personalizada
+features = list(X.columns)
+valores_equipo = [0.45, 1.5, 0.6, 0.2, 0.2, 0.4, 0.5, 0.1, 2019, 5, 3]
+equipo_hypo = pd.DataFrame([valores_equipo], columns=features)
+
+pred = clf.predict(equipo_hypo)[0]
+proba = clf.predict_proba(equipo_hypo)[0][pred]
+
+print("\n🔮 Predicción personalizada:")
+print("¿Ventaja de local?", "SÍ ✅" if pred == 1 else "NO ❌")
+print(f"Probabilidad: {round(proba*100, 2)}%")
+
+# 9. Visualización matriz de confusión
+y_pred = clf.predict(X)
+sns.heatmap(confusion_matrix(y, y_pred), annot=True, fmt='d', cmap='BuGn')
+plt.title("Matriz de Confusión - Árbol Compacto")
 plt.xlabel("Predicción")
 plt.ylabel("Real")
 plt.tight_layout()

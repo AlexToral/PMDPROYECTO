@@ -5,9 +5,9 @@ import seaborn as sns
 import plotly.express as px
 
 # Cargar datasets
-clean_data_path = "../Data/Processed_HomeAdvantage_FIFA_Data.csv"
-raw_soccer_path = "../Data/SoccerLEagues.csv"
-raw_country_path = "../Data/Country_Facts.csv"
+clean_data_path = "./Data/Processed_HomeAdvantage_FIFA_Data.csv"
+raw_soccer_path = "./Data/SoccerLEagues.csv"
+raw_country_path = "./Data/Country_Facts.csv"
 
 # Cargar datos
 clean_df = pd.read_csv(clean_data_path)
